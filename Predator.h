@@ -24,6 +24,11 @@ public:
     Organism* Clone() const override {
         return new Predator(alpha, tau, move_rate);
     }
+
+    // Death is handled externally (e.g., random death in World::CullDead)
+    bool IsDead() const override {
+        return false;
+    }
 };
 
 #endif

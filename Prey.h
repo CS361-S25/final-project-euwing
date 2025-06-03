@@ -24,6 +24,11 @@ public:
     Organism* Clone() const override {
         return new Prey(alpha, tau, move_rate);
     }
+
+    // Prey do not die automatically in current model
+    bool IsDead() const override {
+        return false;
+    }
 };
 
 #endif

@@ -26,9 +26,13 @@ public:
 
     // Create a new copy of this organism (used for reproduction)
     virtual Organism* Clone() const = 0;
+
+    // Return true if the organism is dead
+    virtual bool IsDead() const = 0;
 };
 
 #endif
+
 
 
 

@@ -14,15 +14,15 @@
 emp::web::Document doc("target");
 
 class WebAnimator : public emp::web::Animate {
-    const int num_columns = 60;
-    const int num_rows = 60;
-    const int cell_width = 10;
-    const int cell_height = 10;
+    const int num_columns = 30;
+    const int num_rows = 30;
+    const int cell_width = 20;
+    const int cell_height = 20;
 
     World world;
     emp::web::Canvas canvas;
-    std::ofstream csv_file;
     int generation = 0;
+    double predator_death_rate = 0.03;
 
 public:
     WebAnimator()
@@ -31,27 +31,40 @@ public:
 
         doc << canvas;
         doc << GetToggleButton("Start") << GetStepButton("Step");
+
+        world.SetCloneFunction([](bool is_prey, double a, double t, double m) {
+            return is_prey ? static_cast<Organism*>(new Prey(a, t, m))
+                           : static_cast<Organism*>(new Predator(a, t, m));
+        });
+
         ResetWorld();
     }
 
     void ResetWorld() {
         world = World(num_columns * num_rows);
         generation = 0;
+        world.SetPredatorDeathRate(predator_death_rate);
+
+        world.SetCloneFunction([](bool is_prey, double a, double t, double m) {
+            return is_prey ? static_cast<Organism*>(new Prey(a, t, m))
+                           : static_cast<Organism*>(new Predator(a, t, m));
+        });
 
         struct PatchZone {
             int x_start, y_start;
             double resource;
         };
 
+        // 9 zones, 10×10 each = 100 cells × 9 = 900 (full grid)
         std::vector<PatchZone> zones = {
-            {0, 0, 0.9},   {15, 0, 0.9},   {30, 0, 0.9},
-            {0, 30, 0.5},  {15, 30, 0.5},
-            {30, 30, 0.1}, {45, 30, 0.1}, {45, 0, 0.1}
+            {0, 0, 0.9},  {10, 0, 0.9},  {20, 0, 0.9},   // Green
+            {0, 10, 0.5}, {10, 10, 0.5}, {20, 10, 0.5},  // Orange
+            {0, 20, 0.1}, {10, 20, 0.1}, {20, 20, 0.1}   // Red
         };
 
         for (const auto& zone : zones) {
-            for (int dy = 0; dy < 30; ++dy) {
-                for (int dx = 0; dx < 15; ++dx) {
+            for (int dy = 0; dy < 10; ++dy) {
+                for (int dx = 0; dx < 10; ++dx) {
                     int x = zone.x_start + dx;
                     int y = zone.y_start + dy;
                     int idx = y * num_columns + x;
@@ -65,8 +78,8 @@ public:
         for (const auto& zone : zones) {
             std::vector<int> patch_indices;
 
-            for (int dy = 0; dy < 30; ++dy) {
-                for (int dx = 0; dx < 15; ++dx) {
+            for (int dy = 0; dy < 10; ++dy) {
+                for (int dx = 0; dx < 10; ++dx) {
                     int x = zone.x_start + dx;
                     int y = zone.y_start + dy;
                     int idx = y * num_columns + x;
@@ -74,20 +87,24 @@ public:
                 }
             }
 
-            int center_x = zone.x_start + 7;
-            int center_y = zone.y_start + 15;
+            int center_x = zone.x_start + 5;
+            int center_y = zone.y_start + 5;
             int center_idx = center_y * num_columns + center_x;
-
-            world.AddOrganism(new Predator(0.5, 0.5, 0.5), center_idx);
+            world.AddOrganism(new Predator(0.5, 0.0, 0.5), center_idx);
 
             std::vector<int> prey_indices;
             for (int idx : patch_indices) {
                 if (idx != center_idx) prey_indices.push_back(idx);
             }
 
-            for (int i = 0; i < 5; ++i) {
-                int idx = prey_indices[random.GetUInt(prey_indices.size())];
-                world.AddOrganism(new Prey(0.5, 0.5, 0.5), idx);
+            for (size_t i = 0; i < prey_indices.size(); ++i) {
+                size_t j = random.GetUInt(i + 1);
+                std::swap(prey_indices[i], prey_indices[j]);
+            }
+
+            int num_prey = std::min(10, (int)prey_indices.size());
+            for (int i = 0; i < num_prey; ++i) {
+                world.AddOrganism(new Prey(0.5, 1.0, 0.5), prey_indices[i]);
             }
         }
 
@@ -95,47 +112,19 @@ public:
     }
 
     std::string ResourceColor(double resource) {
-        if (resource < 0.33) return "#ffffcc";
-        else if (resource < 0.66) return "#ffeb3b";
-        else return "#fbc02d";
+        if (resource < 0.33) return "#ff0000";      // Low = red
+        else if (resource < 0.66) return "#ff9900"; // Medium = orange
+        else return "#00cc00";                      // High = green
     }
 
     void DoFrame() override {
         if (generation < 25) {
             world.Step();
-
-            double average_alpha_prey = world.GetAverageAlpha(true);
-            int prey_low = 0, prey_med = 0, prey_high = 0;
-            int pred_low = 0, pred_med = 0, pred_high = 0;
-
-            const auto& patches = world.GetPatches();
-            for (const auto& patch : patches) {
-                int zone = ClassifyZone(patch.resource_level);
-
-                for (Organism* org : patch.occupants) {
-                    if (org->IsPrey()) {
-                        if (zone == 0) prey_low++;
-                        else if (zone == 1) prey_med++;
-                        else prey_high++;
-                    } else {
-                        if (zone == 0) pred_low++;
-                        else if (zone == 1) pred_med++;
-                        else pred_high++;
-                    }
-                }
-            }
-
             generation++;
             Draw();
         } else {
             Stop();
         }
-    }
-
-    int ClassifyZone(double resource_level) {
-        if (resource_level < 0.33) return 0;
-        else if (resource_level < 0.66) return 1;
-        else return 2;
     }
 
     void Draw() {
@@ -146,22 +135,26 @@ public:
             int x = (i % num_columns) * cell_width;
             int y = (i / num_columns) * cell_height;
 
+            const auto& patch = patches[i];
+            std::string color = ResourceColor(patch.resource_level);
+
             bool has_predator = false;
             bool has_prey = false;
 
-            for (Organism* org : patches[i].occupants) {
+            for (Organism* org : patch.occupants) {
                 if (org->IsPrey()) has_prey = true;
                 else has_predator = true;
             }
 
-            if (has_predator) {
-                canvas.Rect(x, y, cell_width, cell_height, "red", "black");
-            } else if (has_prey) {
-                canvas.Rect(x, y, cell_width, cell_height, "blue", "black");
-            } else {
-                canvas.Rect(x, y, cell_width, cell_height,
-                            ResourceColor(patches[i].resource_level), "black");
-            }
+            std::string outline = color;
+            std::string fill;
+
+            if (has_predator) fill = "pink";  
+            else if (has_prey) fill = "blue";
+            else fill = color;
+
+            canvas.Rect(x, y, cell_width, cell_height, outline, outline);
+            canvas.Rect(x + 2, y + 2, cell_width - 4, cell_height - 4, fill, "black");
         }
     }
 };
@@ -169,8 +162,10 @@ public:
 WebAnimator anim;
 
 int main() {
-    anim.Step();
+    anim.Step(); // show initial state
 }
+
+
 
 
 
