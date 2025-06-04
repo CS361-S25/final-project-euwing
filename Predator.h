@@ -3,33 +3,34 @@
 
 #include "Organism.h"
 
-// Predator organisms seek prey and may die if they don't reproduce.
+// This class represents a predator in the simulation.
+// It inherits from the Organism base class.
 class Predator : public Organism {
 public:
-    // Constructor: initializes predator with alpha, tau, and move_rate
+    // Constructor: sets the predator's traits
     Predator(double a, double t, double m)
         : Organism(a, t, m) {}
 
-    // Predators return false for IsPrey
-    bool IsPrey() const override {
-        return false;
-    }
+    // This returns false because this is a predator (not prey)
+    bool IsPrey() const override { return false; }
 
-    // Update predator's sensitivity to patch score differences (alpha)
+    // Change the alpha trait (e.g., through evolution)
     void SetAlpha(double new_alpha) override {
         alpha = new_alpha;
     }
 
-    // Make a new Predator with the same alpha, tau, and move_rate
+    // Make a new predator with the same traits (used for reproduction)
     Organism* Clone() const override {
         return new Predator(alpha, tau, move_rate);
     }
 
-    // Death is handled externally (e.g., random death in World::CullDead)
+    // Predators don't die from internal logic — death is handled in the world
     bool IsDead() const override {
         return false;
     }
 };
 
 #endif
+
+
 

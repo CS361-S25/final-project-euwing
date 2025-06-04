@@ -3,33 +3,39 @@
 
 #include "Organism.h"
 
-// Prey organisms seek high-resource, low-danger patches and reproduce quickly.
+// This class represents the first type of prey (Prey 1)
+// It inherits from the Organism base class
 class Prey : public Organism {
 public:
-    // Constructor: initializes prey with alpha, tau, and move_rate
+    // Constructor: initializes the prey's traits
     Prey(double a, double t, double m)
         : Organism(a, t, m) {}
 
-    // Prey returns true for IsPrey
-    bool IsPrey() const override {
-        return true;
-    }
+    // This function tells us that this is a prey (not a predator)
+    bool IsPrey() const override { return true; }
 
-    // Update prey's sensitivity to patch score differences (alpha)
+    // This lets us change the alpha trait later (evolution or mutation)
     void SetAlpha(double new_alpha) override {
         alpha = new_alpha;
     }
 
-    // Make a new Prey with the same alpha, tau, and move_rate
+    // This makes a new prey with the same traits (used for reproduction)
     Organism* Clone() const override {
         return new Prey(alpha, tau, move_rate);
     }
 
-    // Prey do not die automatically in current model
+    // Prey never die on their own — only predators can remove them
     bool IsDead() const override {
         return false;
+    }
+
+    // This tells the world how likely this prey is to move
+    double GetMoveRate() const override {
+        return move_rate;
     }
 };
 
 #endif
+
+
 
