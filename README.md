@@ -2,7 +2,7 @@
 
 This project simulates an evolving ecosystem composed of predators and two types of prey (Prey1 and Prey2) across a patch-based world. The simulation demonstrates how trait-driven behavior, resource distribution, and selection pressures influence population dynamics over generations.
 
-## 🧬 Overview
+##  Overview
 
 There are three types of organisms:
 
@@ -14,7 +14,7 @@ There are three types of organisms:
 
 Each organism reproduces asexually with mutation, potentially altering `alpha` and `tau`. Evolutionary dynamics are driven by trait-based movement, survival, and reproduction in an environment with varied resource zones.
 
-## 🗺️ Patch Zones
+## Patch Zones
 
 The world consists of patches assigned to one of three resource levels:
 
