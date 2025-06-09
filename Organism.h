@@ -1,37 +1,46 @@
 #ifndef ORGANISM_H
 #define ORGANISM_H
 
-// This is the base class for all organisms (like prey and predator).
-// It stores shared traits and defines the basic interface for behavior.
+// Base class for all organisms (prey and predators).
 class Organism {
 protected:
-    double alpha;     // How strongly this organism reacts to patch differences
-    double tau;       // What the organism prefers: 1 = food, 0 = safety
-    double move_rate; // Probability the organism moves each turn (0 to 1)
+    double alpha; // Organism's alpha trait.
+    double tau;   // Organism's tau trait.
+    double move_rate; // Probability of moving to a different patch.
+    int birth_zone = -1; // Resource zone where the organism was born.
 
 public:
-    // Constructor: sets up the initial values for alpha, tau, and move rate
+    // Constructor initializes organism traits.
     Organism(double a, double t, double m)
         : alpha(a), tau(t), move_rate(m) {}
 
-    // A virtual destructor so derived classes can clean up properly
+    // Virtual destructor.
     virtual ~Organism() = default;
 
-    // Functions to get values (traits)
+    // Returns organism's alpha trait.
     double GetAlpha() const { return alpha; }
+    // Returns organism's tau trait.
     double GetTau() const { return tau; }
-
-    // Organisms can override this if their move_rate behaves differently
+    // Returns organism's move rate.
     virtual double GetMoveRate() const { return move_rate; }
 
-    // These functions must be implemented by any subclass (like Prey or Predator)
-    virtual bool IsPrey() const = 0;            // Is this a prey? (true or false)
-    virtual void SetAlpha(double new_alpha) = 0; // Change alpha value
-    virtual Organism* Clone() const = 0;        // Make a new copy of this organism
-    virtual bool IsDead() const = 0;            // Should this organism be removed?
+    // Returns true if prey, false if predator.
+    virtual bool IsPrey() const = 0;
+    // Sets organism's alpha trait.
+    virtual void SetAlpha(double new_alpha) = 0;
+    // Creates a copy of the organism.
+    virtual Organism* Clone() const = 0;
+    // Checks if organism is dead.
+    virtual bool IsDead() const = 0;
+
+    // Sets the birth zone.
+    void SetBirthZone(int z) { birth_zone = z; }
+    // Returns the birth zone.
+    int GetBirthZone() const { return birth_zone; }
 };
 
 #endif
+
 
 
 
